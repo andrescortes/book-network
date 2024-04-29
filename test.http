@@ -1,0 +1,10 @@
+### create a user
+POST localhost:8088/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "firstname": "Ali",
+  "lastname": "Bouali",
+  "email": "test@gmail.com",
+  "password": "12345678"
+}
