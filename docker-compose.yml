@@ -1,6 +1,5 @@
-version: '3.9'
-
 services:
+
   postgres:
     container_name: postgres-sql-bsn
     image: postgres
@@ -16,13 +15,6 @@ services:
     networks:
       - spring-demo
     restart: unless-stopped
-
-  maildev:
-    container_name: maildev-dev-sbn
-    image: maildev/maildev
-    ports:
-      - "1080:8080"
-      - "1025:1025"
 
 networks:
   spring-demo:

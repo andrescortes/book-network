@@ -4,21 +4,30 @@ import com.co.ali.book.email.EmailService;
 import com.co.ali.book.email.EmailTemplateName;
 import com.co.ali.book.role.Role;
 import com.co.ali.book.role.RoleRepository;
+import com.co.ali.book.security.JwtService;
 import com.co.ali.book.user.Token;
 import com.co.ali.book.user.TokenRepository;
 import com.co.ali.book.user.User;
 import com.co.ali.book.user.UserRepository;
 import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
-//@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthenticationService {
 
     private final PasswordEncoder passwordEncoder;
@@ -26,22 +35,11 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
     private final EmailService emailService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
     @Value("${application.mailing.frontend.activation-url}")
     private String activationUrl;
 
-    public AuthenticationService(
-            PasswordEncoder passwordEncoder,
-            RoleRepository roleRepository,
-            UserRepository userRepository,
-            TokenRepository tokenRepository,
-            EmailService emailService
-    ) {
-        this.passwordEncoder = passwordEncoder;
-        this.roleRepository = roleRepository;
-        this.userRepository = userRepository;
-        this.tokenRepository = tokenRepository;
-        this.emailService = emailService;
-    }
 
     public void register(RegistrationRequest request) throws MessagingException {
         Role userRole = roleRepository.findByName("USER")
@@ -66,7 +64,7 @@ public class AuthenticationService {
         emailService.sendEmail(
                 user.getEmail(),
                 user.getFullName(),
-                EmailTemplateName.ACTIVATION_ACCOUNT,
+                EmailTemplateName.EMAIL_TEMPLATE,
                 activationUrl,
                 newToken,
                 "Account activation"
@@ -96,5 +94,40 @@ public class AuthenticationService {
             sb.append(characters.charAt(index));
         }
         return sb.toString();
+    }
+
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        Authentication authenticate = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+        Map<String, Object> claims = new HashMap<>();
+        User principal = (User) authenticate.getPrincipal();
+        claims.put("fullname", principal.getFullName());
+        var jwtToken = jwtService.generateToken(claims, principal);
+        return AuthenticationResponse
+                .builder()
+                .token(jwtToken)
+                .build();
+    }
+
+    @Transactional
+    public void activateAccount(String token) throws MessagingException {
+        Token savedToToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new IllegalStateException("Invalid token"));
+        if (LocalDateTime.now().isAfter(savedToToken.getExpiredAt())) {
+            sendValidationEmail(savedToToken.getUser());
+            throw new RuntimeException("Activation token has expired. A new token has been sent to the same email address");
+        }
+        var user = userRepository.findById(savedToToken.getUser().getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        user.setEnabled(true);
+        userRepository.save(user);
+        savedToToken.setValidatedAt(LocalDateTime.now());
+        tokenRepository.save(savedToToken);
+
     }
 }
