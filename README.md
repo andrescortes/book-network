@@ -42,8 +42,8 @@ Takes email, password and returns a json with a new token.
   POST /api/v1/auth/register
 ```
 
-| Parameter | Type     | Description                |
-| :-------- | :------- | :------------------------- |
+| Parameter |   Type   |        Description         |
+|:---------:|:--------:|:--------------------------:|
 | `Authorization` | `string` | **Required**. Your token |
 
 Takes email, password and returns a json with a new token.
@@ -58,3 +58,13 @@ Takes email, password and returns a json with a new token.
 
 [Hello Spring Security](https://docs.spring.io/spring-security/reference/servlet/getting-started.html)
 
+## Docker
+
+Remember that the container required a db container, You can pass container_db in Dockerfile as ENV or ARG, read application-dev.yml for understand it.
+
+About Dockerfile with gradle:
+[gradle-and-docker-how-to-run-a-gradle-build-within-docker-container](https://stackoverflow.com/a/74951353/19403177)
+```
+- docker build -t 'imageName' .
+- docker run --network 'network_name_new' --name app -d --name 'container_name' 'yourImage'
+```
