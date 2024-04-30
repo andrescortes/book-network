@@ -3,8 +3,8 @@ POST localhost:8088/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "firstname": "Ali",
-  "lastname": "Bouali",
+  "firstname": "andres",
+  "lastname": "cortes",
   "email": "andres_boss@live.com",
   "password": "12345678"
 }
@@ -19,5 +19,5 @@ Content-Type: application/json
 }
 
 ### activate-account
-GET localhost:8088/api/v1/auth/activate-account?token=534336
+GET localhost:8088/api/v1/auth/activate-account?token=461043
 

@@ -9,11 +9,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: book_social_network
-      PGDATA: /var/lib/postgresql/data
     volumes:
-      - postgres:/data/postgres
-    networks:
-      - spring-demo
+      - ./db:/var/lib/postgresql
     restart: unless-stopped
 
 networks:
@@ -21,5 +18,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres:
-    driver: local
+  db:
